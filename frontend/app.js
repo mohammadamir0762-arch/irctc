@@ -22,8 +22,29 @@ function resetResultSections() {
   mockBanner.classList.add("hidden");
 }
 
+// The free Render instance sleeps after 15 minutes idle and takes ~1 minute
+// to wake. Without this the page just sits blank and looks broken, so say
+// what's happening once a request is clearly slower than a warm one.
+async function fetchWithWakeNotice(url, options) {
+  const notice = setTimeout(() => {
+    errorEl.textContent =
+      "Waking up the server (free hosting sleeps when idle) — this can take up to a minute...";
+    // Neutral styling: this is a status update, not a failure.
+    errorEl.classList.add("as-notice");
+    errorEl.classList.remove("hidden");
+  }, 3000);
+  try {
+    return await fetch(url, options);
+  } finally {
+    clearTimeout(notice);
+    errorEl.classList.add("hidden");
+    errorEl.classList.remove("as-notice");
+  }
+}
+
 function showError(message) {
   errorEl.textContent = message;
+  errorEl.classList.remove("as-notice");
   errorEl.classList.remove("hidden");
 }
 
@@ -63,7 +84,7 @@ pnrForm.addEventListener("submit", async (e) => {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/pnr/${pnrNumber}`);
+    const res = await fetchWithWakeNotice(`${API_BASE}/pnr/${pnrNumber}`);
     if (!res.ok) {
       const detail = await res.json().catch(() => ({}));
       throw new Error(detail.detail || `Request failed (${res.status})`);
@@ -97,7 +118,7 @@ pnrForm.addEventListener("submit", async (e) => {
 });
 
 async function loadOptions() {
-  const res = await fetch(`${API_BASE}/options`);
+  const res = await fetchWithWakeNotice(`${API_BASE}/options`);
   const options = await res.json();
   for (const [field, values] of Object.entries(options)) {
     const select = document.getElementById(field);
@@ -118,7 +139,7 @@ predictForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/predict`, {
+    const res = await fetchWithWakeNotice(`${API_BASE}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -135,7 +156,7 @@ predictForm.addEventListener("submit", async (e) => {
 });
 
 async function loadModelInfo() {
-  const res = await fetch(`${API_BASE}/model`);
+  const res = await fetchWithWakeNotice(`${API_BASE}/model`);
   const m = await res.json();
   document.getElementById("model-note").textContent =
     `Model: trained on ${m.n_tickets.toLocaleString()} real waitlisted tickets ` +
