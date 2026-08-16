@@ -84,12 +84,9 @@ cd frontend
 python3 -m http.server 5500
 ```
 
-Then open http://localhost:5500 in a browser. The form calls the API at
-`http://localhost:8000` (see `API_BASE` in `frontend/app.js`).
-
-Both servers are currently running in the background from this session
-(backend on :8000, bound to `0.0.0.0` so a phone on the same WiFi can reach
-it too; frontend on :5500) — you can open http://localhost:5500 right now.
+Then open http://localhost:5500. `frontend/config.js` detects it is running
+on localhost and talks to the local backend; served from anywhere else it
+uses the deployed API instead, so no edit is needed to switch between them.
 
 ## API
 
@@ -207,10 +204,9 @@ coach/berth rather than a waitlist position. If a waitlisted status has no
 readable position anywhere, the request is refused with a clear error
 rather than scored on a guess.
 
-Two mapped fields remain estimates, not looked-up facts, because no provider
-response includes them: `segment_ratio` (needs route/distance data) and
-`total_berths` (needs a per-train capacity table). They're listed in every
-response's `estimated_fields` so this is visible, not hidden.
+Every model input is read directly from the provider response — there are no
+estimated or invented features. (`estimated_fields` remains in the response
+shape, always empty, from when the earlier model did rely on estimates.)
 
 ## Validation & benchmark
 
@@ -255,9 +251,13 @@ worse in practice, so it stays a benchmark.
 
 `backend/app/storage.py` logs every `/pnr/{pnr_number}` check to a local
 SQLite file (`backend/data/pnr_log.sqlite3`) — feature snapshot, predicted
-probability, and (once known) the real outcome. This is how the model
-eventually moves off synthetic data: real usage accumulates real labeled
-rows for free, as a byproduct of people using the "check my PNR" feature.
+probability, and (once known) the real outcome. It also records quota, train
+number, and route, which the current model cannot use but which no public
+dataset provides. This is the only realistic path to the missing features:
+real usage accumulates real labelled rows as a byproduct of people checking
+their PNRs.
+
+Blocked in practice by the 10-requests/month quota — see "Quota reality".
 
 - `GET /flywheel/stats` — quick visibility: total checks logged, how many
   have a captured outcome, how many are real (non-mock).
@@ -266,9 +266,9 @@ rows for free, as a byproduct of people using the "check my PNR" feature.
   happened. Verified locally: it correctly finds past-due unresolved rows
   and only records an outcome once the status actually resolves (leaves
   still-waitlisted rows pending rather than guessing).
-- Retraining on this real data (once there's enough of it) isn't built yet
-  — that's a rerun of `train.py`'s pipeline against real rows instead of
-  `generate_synthetic_dataset()`, once the row count justifies it.
+- Retraining on collected data isn't built yet — it would follow
+  `train_real.py`'s pipeline, reading logged rows instead of the Kaggle CSV,
+  once the row count justifies it.
 
 ## Mobile app
 
@@ -284,17 +284,14 @@ npm start        # opens Expo dev tools / QR code
 ```
 
 Scan the QR code with the **Expo Go** app (iOS or Android, free, no
-developer account needed) on a phone on the same WiFi network as this
-computer. If it can't reach the API, check `mobile/config.js` — it points
-at this machine's LAN IP (`172.20.138.169`), which changes if you switch
-networks; re-run `ipconfig getifaddr en0` and update it if needed. The
-backend must stay bound to `0.0.0.0` (already the case above) for the phone
-to reach it.
+developer account needed). `mobile/config.js` points at the deployed Render
+backend, so the phone does not need to be on the same network as this
+computer and nothing has to be running locally. To develop against a local
+backend instead, set `USE_LOCAL = true` in that file and update `LAN_IP`.
 
-Note: `create-expo-app` initialized `mobile/` as its own git repository
-(separate from the rest of this project, which isn't a git repo yet) — flag
-this if/when you set up version control, so you can decide monorepo vs.
-separate repos deliberately rather than by accident.
+Note: some networks (including some campus and office WiFi) block Vercel and
+Render outright. If the site or app will not load, try mobile data before
+assuming something is broken.
 
 Publishing later: Android as a sideloaded APK is free
 (`eas build --platform android` or a local build); Play Store listing is a
@@ -303,19 +300,30 @@ listing needs a $99/year Apple Developer account and, for the final signed
 build, a Mac (Expo's cloud build service can substitute for most of the
 process).
 
+## Live
+
+| | URL |
+|---|---|
+| Web app | https://irctc-smoky.vercel.app |
+| API | https://pnr-predictor-api.onrender.com |
+
+Both on free tiers. The API sleeps after ~15 minutes idle and takes about a
+minute to wake; both UIs show a message instead of hanging silently. Open the
+site a couple of minutes before demoing so it is already warm.
+
 ## Next steps
 
-1. **Verify against a real waitlisted PNR.** Confirmed tickets are verified
+1. **Test the mobile app on a device** via Expo Go. It bundles cleanly (579
+   modules, no errors) but has never actually been run.
+2. **Verify against a real waitlisted PNR.** Confirmed tickets are verified
    end-to-end; the waitlisted path is inferred from the provider schema and
-   has not been seen against a live WL response.
-2. **Deploy** (Render + Vercel free tiers) with response caching and per-IP
-   rate limiting first — a public URL on a free API tier burns quota fast.
-3. **Test the mobile app on a device** via Expo Go — it bundles cleanly but
-   has never been run.
-4. **Extend the model beyond four features.** Quota, train, and route are
-   absent from the training data but *are* available from the PNR lookup, so
-   the flywheel can eventually supply them.
+   has never seen a live WL response. Costs one of the 10 monthly requests.
+3. **Extend the model beyond four features.** Quota is the biggest gap (5th
+   by importance; General 26% vs Remote Location 45%). It is available from
+   the PNR lookup but absent from every usable training set, so it needs
+   self-collected data — which needs paid API quota.
+4. **Add caching and per-IP rate limiting** before switching off mock mode.
+   Ten requests a month disappear instantly on a public URL.
 5. **Benchmark against the provider's own `PredictionPercentage`** — log it
-   alongside our prediction and the real outcome to see which is better
+   next to our prediction and the real outcome to see which is better
    calibrated.
-6. `git init` at the project root (only `mobile/` is a repo right now).
