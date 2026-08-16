@@ -293,12 +293,25 @@ Note: some networks (including some campus and office WiFi) block Vercel and
 Render outright. If the site or app will not load, try mobile data before
 assuming something is broken.
 
-Publishing later: Android as a sideloaded APK is free
-(`eas build --platform android` or a local build); Play Store listing is a
-$25 one-time fee. iOS testing via Expo Go is free; an actual App Store
-listing needs a $99/year Apple Developer account and, for the final signed
-build, a Mac (Expo's cloud build service can substitute for most of the
-process).
+### Building an installable APK
+
+Expo Go needs the dev server running and Expo Go installed on the phone. An
+APK is a standalone file anyone can install directly — better for demos and
+for handing to judges. `eas.json` is configured with a `preview` profile that
+produces an APK (rather than the Play-Store AAB):
+
+```bash
+npm install -g eas-cli
+eas login            # free Expo account
+eas build --platform android --profile preview
+```
+
+The build runs in Expo's cloud (no Android Studio needed) and prints a
+download link when it finishes. Free-tier builds queue, so allow time.
+
+Store listings, if ever wanted: Google Play is a $25 one-time fee; the App
+Store needs a $99/year Apple Developer account. Neither is required for the
+APK or for Expo Go testing.
 
 ## Live
 
