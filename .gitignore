@@ -1,0 +1,23 @@
+# Secrets — never commit
+setenv.sh
+.env
+
+# Python
+backend/venv/
+__pycache__/
+*.pyc
+
+# Runtime data (the flywheel DB is per-deployment state, not source)
+backend/data/
+
+# NOTE: backend/models/ IS committed on purpose. It's only ~330KB, and
+# shipping the trained model means Render doesn't have to run training
+# during build on a 512MB free instance. Regenerate with
+# `python -m app.train_real` after changing the training code.
+
+# Node
+node_modules/
+.expo/
+
+# macOS
+.DS_Store

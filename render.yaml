@@ -1,0 +1,27 @@
+# Render blueprint. In the Render dashboard: New > Blueprint, point it at this
+# repo, and it picks this file up automatically.
+#
+# The model is committed (backend/models/model.joblib, ~330KB) rather than
+# trained during build — the free instance has 512MB RAM and training would be
+# both slow and memory-risky on every deploy.
+services:
+  - type: web
+    name: pnr-predictor-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Render injects $PORT and expects the service to bind it on 0.0.0.0.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Matches the local venv the model was trained and pickled under —
+      # joblib artifacts are sensitive to large version gaps.
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      # Defaults to mock so a public URL cannot burn the 10-requests/month
+      # real quota. To go live, set PNR_PROVIDER=rapidapi and add
+      # PNR_API_KEY + PNR_RAPIDAPI_HOST in the Render dashboard (not here —
+      # never commit the key).
+      - key: PNR_PROVIDER
+        value: mock

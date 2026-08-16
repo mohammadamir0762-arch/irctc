@@ -1,0 +1,28 @@
+{
+  "trained_on": "real",
+  "source": "Kaggle Railway Waitinglist Dataset",
+  "n_observations": 39724,
+  "n_tickets": 28748,
+  "test_auc": 0.796,
+  "test_brier": 0.0447,
+  "feature_columns": [
+    "travel_class_code",
+    "booking_position",
+    "current_position",
+    "days_before_journey"
+  ],
+  "travel_classes": [
+    "SL",
+    "3A",
+    "2A",
+    "CC",
+    "1A",
+    "2S"
+  ],
+  "reference": {
+    "travel_class_code": 0,
+    "booking_position": 55.0,
+    "current_position": 25.0,
+    "days_before_journey": 7
+  }
+}

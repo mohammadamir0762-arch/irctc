@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PNR Confirmation Predictor</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>PNR Confirmation Predictor</h1>
+    <p class="subtitle">Enter your 10-digit PNR — we look up the details and estimate the confirmation probability.</p>
+
+    <form id="pnr-form" class="pnr-form">
+      <input type="text" id="pnr_number" name="pnr_number" placeholder="e.g. 1234567890" inputmode="numeric" pattern="\d{10}" maxlength="10" required />
+      <button type="submit">Check PNR</button>
+    </form>
+    <p id="mock-banner" class="mock-banner hidden">
+      No real PNR provider is configured yet — showing simulated data for demo purposes only.
+    </p>
+
+    <section id="pnr-summary" class="pnr-summary hidden"></section>
+
+    <section id="resolved" class="resolved hidden"></section>
+
+    <section id="result" class="result hidden">
+      <div class="probability-ring">
+        <span id="probability-value">--%</span>
+      </div>
+      <p id="confidence-label"></p>
+      <ul id="top-factors"></ul>
+      <p id="estimated-note" class="estimated-note hidden"></p>
+    </section>
+
+    <p id="error" class="error hidden"></p>
+
+    <details class="advanced">
+      <summary>Advanced: manual feature entry (for testing the model directly)</summary>
+      <form id="predict-form">
+        <label>
+          Travel class
+          <select name="travel_class" id="travel_class"></select>
+        </label>
+
+        <label>
+          Waitlist position when booked
+          <input type="number" name="booking_position" min="0" value="40" required />
+        </label>
+
+        <label>
+          Current waitlist position
+          <input type="number" name="current_position" min="0" value="12" required />
+        </label>
+
+        <label>
+          Days until journey
+          <input type="number" name="days_before_journey" min="0" max="120" value="7" required />
+        </label>
+
+        <button type="submit">Predict from manual inputs</button>
+      </form>
+      <p class="model-note" id="model-note"></p>
+    </details>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
