@@ -29,6 +29,9 @@ RAILOFY_CSV = DATASET_DIR / "Railofy_training_data_for_model.csv"
 
 RANDOM_STATE = 0
 OBSERVATION_POINTS = {"status1Month": 30, "status1Week": 7, "status2Days": 2}
+# Must match backend/app/train_real.py exactly, or this benchmark measures a
+# different model from the one actually deployed.
+TRAVEL_CLASSES = ["SL", "3A", "2A", "CC", "1A", "2S"]
 
 
 def header(text: str) -> None:
@@ -53,7 +56,9 @@ def to_long(wide: pd.DataFrame) -> pd.DataFrame:
         frame["days_before_journey"] = days
         frames.append(frame)
     long = pd.concat(frames, ignore_index=True)
-    long["travel_class_code"] = long["travelClass"].astype("category").cat.codes
+    long["travel_class_code"] = long["travelClass"].apply(
+        lambda c: TRAVEL_CLASSES.index(c) if c in TRAVEL_CLASSES else -1
+    )
     return long.rename(columns={"bookingStatus": "booking_position", "labels": "confirmed"})
 
 
