@@ -1,15 +1,16 @@
-// "localhost" only works when the app and the backend run on the exact
-// same machine — which is never true for Expo Go on a physical phone
-// (the usual free way to test this), and isn't always true for
-// emulators/simulators either. So this defaults to your computer's LAN IP.
+// Points at the deployed backend, so the app works on any phone, on any
+// network, without your laptop running anything.
 //
-// - Testing with Expo Go on a real phone: keep LAN_IP, and make sure the
-//   phone is on the same WiFi network as this computer.
-// - Android emulator (on this same machine): use "10.0.2.2" instead.
-// - iOS simulator (on this same machine): "localhost" works.
-//
-// Find your LAN IP with `ipconfig getifaddr en0` (Mac Wi-Fi) — it changes
-// when you switch networks, so update this if the app can't reach the API.
+// The free Render instance sleeps after ~15 minutes idle; the first request
+// after that takes up to a minute to wake it. The app shows a message rather
+// than just spinning.
+const DEPLOYED_API = "https://pnr-predictor-api.onrender.com";
+
+// For developing against a backend on your own machine, set USE_LOCAL to true
+// and put your computer's LAN IP below (`ipconfig getifaddr en0` on Mac —
+// it changes when you switch networks). The phone must be on the same WiFi,
+// and the backend must be started with `--host 0.0.0.0`.
+const USE_LOCAL = false;
 const LAN_IP = "172.20.138.169";
 
-export const API_BASE = `http://${LAN_IP}:8000`;
+export const API_BASE = USE_LOCAL ? `http://${LAN_IP}:8000` : DEPLOYED_API;

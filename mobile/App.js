@@ -20,6 +20,7 @@ function confidenceColor(probability) {
 export default function App() {
   const [pnrNumber, setPnrNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
@@ -31,6 +32,9 @@ export default function App() {
     setError(null);
     setResult(null);
     setLoading(true);
+    // Free hosting sleeps when idle and can take ~a minute to wake. Say so
+    // instead of leaving a spinner with no explanation.
+    const wakeTimer = setTimeout(() => setWaking(true), 3000);
     try {
       const res = await fetch(`${API_BASE}/pnr/${pnrNumber}`);
       const data = await res.json();
@@ -41,10 +45,12 @@ export default function App() {
     } catch (e) {
       setError(
         e.message === "Network request failed"
-          ? `Could not reach the API at ${API_BASE}. Check config.js and that the backend is running with --host 0.0.0.0.`
+          ? `Could not reach the API at ${API_BASE}. Check your internet connection — some networks block this host.`
           : e.message
       );
     } finally {
+      clearTimeout(wakeTimer);
+      setWaking(false);
       setLoading(false);
     }
   }
@@ -75,6 +81,12 @@ export default function App() {
           )}
         </Pressable>
       </View>
+
+      {waking && (
+        <Text style={styles.waking}>
+          Waking up the server (free hosting sleeps when idle) — up to a minute...
+        </Text>
+      )}
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -199,6 +211,11 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#f87171",
+    marginTop: 12,
+    fontSize: 13,
+  },
+  waking: {
+    color: "#38bdf8",
     marginTop: 12,
     fontSize: 13,
   },
