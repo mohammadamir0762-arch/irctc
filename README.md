@@ -59,6 +59,9 @@ frontend/
   index.html / app.js / style.css   plain JS UI, no build step
 dataset/
   Railway Ticket WaitingList Data.csv   the real training data
+  Railofy_training_data_for_model.csv   benchmark only (see Validation)
+analysis/
+  benchmark.py                       reproduces every number in Validation
 mobile/
   App.js / config.js                 Expo (React Native) app, same PNR flow
 ```
@@ -208,6 +211,45 @@ Two mapped fields remain estimates, not looked-up facts, because no provider
 response includes them: `segment_ratio` (needs route/distance data) and
 `total_berths` (needs a per-train capacity table). They're listed in every
 response's `estimated_fields` so this is visible, not hidden.
+
+## Validation & benchmark
+
+`python analysis/benchmark.py` reproduces every number below. No API calls,
+no network, no paid services.
+
+**The four deployed features are the determining ones.** Measured on real
+tickets:
+
+| Factor | Effect |
+|---|---|
+| Waitlist position (7d out) | 12.9% confirm at WL 1-5 → 0.2% at WL 60+ (**65x**) |
+| Days until journey (WL 1-5) | 6.6% at 30d → 12.9% at 7d → 15.1% at 2d (**2.3x**) |
+| Travel class (WL 1-15, 7d out) | 2A 5.2% → CC 33.6% (**6.5x**) |
+
+**How much signal we capture.** Benchmarked against the Railofy Kaggle
+competition dataset (36,775 labelled tickets, 23 features):
+
+| Model | AUC |
+|---|---|
+| Random baseline | 0.500 |
+| **Deployed model** (4 features, real data, live) | **0.799** |
+| Railofy ceiling (23 features, not deployable) | 0.945 |
+
+The deployed model captures **67% of the achievable signal above random**
+using 4 features instead of 23.
+
+**What would help most.** Permutation importance over all 23 Railofy
+features ranks current waitlist position **#1 by more than 2x** over
+anything else; days-to-departure is 4th, quota 5th, route distance 6th. So
+the deployed model holds the single strongest predictor, and the main gap is
+quota — worth a lot: General 26.3%, Pooled 44.1%, Remote Location 45.3%.
+
+**Why the 0.945 model is not deployed.** Railofy encodes waitlist position
+as a fraction (1/2, 1/3, 1/4 ...) of a denominator absent from the file, so
+a real "WL 25" cannot be converted to its input scale. Quantile-mapping real
+values onto its distribution and scoring against real labels gives **AUC
+0.480 — worse than random**. Shipping it would look better on paper and be
+worse in practice, so it stays a benchmark.
 
 ## Data flywheel
 
