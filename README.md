@@ -274,20 +274,34 @@ Blocked in practice by the 10-requests/month quota — see "Quota reality".
 
 `mobile/` is an Expo (React Native, SDK 57) app with one screen mirroring
 the web app's PNR-first flow — same `/pnr/{pnr_number}` call, same result
-layout. Confirmed it bundles cleanly (`npx expo export --platform android`
-succeeded, 579 modules, no errors) but hasn't been run on an actual device
-or emulator from here — that needs a physical run to confirm.
+layout.
+
+**Status: bundles, never run.** `npx expo export` succeeds for both android
+and ios (579 modules, no errors) and the dev server serves both bundles, but
+the app has never been opened on a real device — blocked by the Expo Go SDK
+limit below. Treat it as unverified. The web app is the demonstrated
+deliverable.
 
 ```bash
 cd mobile
 npm start        # opens Expo dev tools / QR code
 ```
 
-Scan the QR code with the **Expo Go** app (iOS or Android, free, no
-developer account needed). `mobile/config.js` points at the deployed Render
-backend, so the phone does not need to be on the same network as this
-computer and nothing has to be running locally. To develop against a local
-backend instead, set `USE_LOCAL = true` in that file and update `LAN_IP`.
+`mobile/config.js` points at the deployed Render backend, so nothing has to
+run locally. To develop against a local backend instead, set
+`USE_LOCAL = true` in that file and update `LAN_IP`.
+
+**Known blocker on iOS:** this project is on Expo SDK 57, but Expo Go on the
+Apple App Store stops at **SDK 54** — so it refuses to open the project and
+misleadingly says "download the latest version of Expo Go". Updating the app
+cannot fix it. To actually run on an iPhone, either:
+
+- downgrade the project to SDK 54 (this app only uses `View`, `Text`,
+  `TextInput`, `Pressable`, `ScrollView` and `fetch`, so nothing would break), or
+- install a matching Expo Go build from https://expo.dev/go, or
+- build a standalone app and skip Expo Go entirely (see below).
+
+Android Expo Go and EAS APK builds are unaffected.
 
 Note: some networks (including some campus and office WiFi) block Vercel and
 Render outright. If the site or app will not load, try mobile data before
@@ -326,17 +340,15 @@ site a couple of minutes before demoing so it is already warm.
 
 ## Next steps
 
-1. **Test the mobile app on a device** via Expo Go. It bundles cleanly (579
-   modules, no errors) but has never actually been run.
-2. **Verify against a real waitlisted PNR.** Confirmed tickets are verified
+1. **Verify against a real waitlisted PNR.** Confirmed tickets are verified
    end-to-end; the waitlisted path is inferred from the provider schema and
    has never seen a live WL response. Costs one of the 10 monthly requests.
-3. **Extend the model beyond four features.** Quota is the biggest gap (5th
+2. **Extend the model beyond four features.** Quota is the biggest gap (5th
    by importance; General 26% vs Remote Location 45%). It is available from
    the PNR lookup but absent from every usable training set, so it needs
    self-collected data — which needs paid API quota.
-4. **Add caching and per-IP rate limiting** before switching off mock mode.
+3. **Add caching and per-IP rate limiting** before switching off mock mode.
    Ten requests a month disappear instantly on a public URL.
-5. **Benchmark against the provider's own `PredictionPercentage`** — log it
+4. **Benchmark against the provider's own `PredictionPercentage`** — log it
    next to our prediction and the real outcome to see which is better
    calibrated.

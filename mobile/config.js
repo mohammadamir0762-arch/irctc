@@ -11,6 +11,6 @@ const DEPLOYED_API = "https://pnr-predictor-api.onrender.com";
 // it changes when you switch networks). The phone must be on the same WiFi,
 // and the backend must be started with `--host 0.0.0.0`.
 const USE_LOCAL = false;
-const LAN_IP = "172.20.138.169";
+const LAN_IP = "172.20.10.2";
 
 export const API_BASE = USE_LOCAL ? `http://${LAN_IP}:8000` : DEPLOYED_API;
