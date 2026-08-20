@@ -1,4 +1,4 @@
-# PNR Confirmation Predictor (PS91)
+# PNR Confirmation Predictor 
 
 Predicts the probability a waitlisted/RAC Indian Railways ticket confirms by
 chart preparation, given train/quota/class/waitlist-position style features.
